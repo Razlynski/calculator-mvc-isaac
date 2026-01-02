@@ -1,17 +1,13 @@
-//namespace HelloWorld
-//{
-    class Program
+namespace CalculatorMVC.Models
+{
+    public class CalculationHistory
     {
-        static void Main(string[] args)
-        {
-        int a = 5;
-        int b = 10;
-        a=-3;
-        b = a;
-
-           Console.WriteLine(b);
-           Console.ReadKey();
-        Environment.Exit(0);
-        }
+        public int Id { get; set; }
+        public string Expression { get; set; } = "";
+        public double Result { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string WindowId { get; set; } = "";
     }
-//}
+}
+
+
