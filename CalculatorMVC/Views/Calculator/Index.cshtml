@@ -1,0 +1,407 @@
+﻿@* ============================================================================
+   Calculator/Index.cshtml - The Calculator User Interface
+   ============================================================================
+   This is a RAZOR VIEW - HTML mixed with C# code.
+   
+   RAZOR SYNTAX QUICK REFERENCE:
+   @Model          → The data passed from controller (CalculatorState)
+   @Model.Property → Access a property from the model
+   @{ code }       → C# code block (no output)
+   @if/@for        → C# control structures
+   asp-*           → Tag Helpers (generate URLs, form fields, etc.)
+   
+   The View receives data from the Controller and displays it as HTML.
+   ============================================================================ *@
+
+@* Tell Razor what type of Model to expect *@
+@model CalculatorMVC.Models.CalculatorState
+
+@* Set the page title (appears in browser tab) *@
+@{
+    ViewData["Title"] = "Calculator";
+}
+
+@* ============================================================================
+   INLINE STYLES
+   ============================================================================
+   Normally you'd put CSS in a separate file, but for learning purposes
+   I'm keeping it here so you can see everything in one place.
+   ============================================================================ *@
+<style>
+    /* ====== Calculator Container ====== */
+    /* Flexbox layout: calculator on left, history on right */
+    .calculator-page {
+        display: flex;              /* Flexbox container */
+        gap: 30px;                  /* Space between children */
+        justify-content: center;    /* Center horizontally */
+        padding: 20px;
+        flex-wrap: wrap;            /* Wrap on small screens */
+    }
+
+    /* ====== Calculator Body ====== */
+    .calculator {
+        width: 320px;
+        background: linear-gradient(145deg, #2d2d2d, #1a1a1a);  /* Gradient background */
+        border-radius: 20px;        /* Rounded corners */
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);  /* Drop shadow */
+    }
+
+    /* ====== Display Screen ====== */
+    .display {
+        background: #1c1c1c;
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 15px;
+        text-align: right;          /* Numbers align right like real calculator */
+        min-height: 70px;
+    }
+
+    .display-expression {
+        color: #888;                /* Dim color for expression */
+        font-size: 14px;
+        min-height: 20px;
+    }
+
+    .display-value {
+        color: white;
+        font-size: 36px;
+        font-weight: 300;           /* Light font weight */
+        word-break: break-all;      /* Break long numbers */
+    }
+
+    /* ====== Button Grid ====== */
+    .buttons {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);  /* 4 equal columns */
+        gap: 10px;                              /* Space between buttons */
+    }
+
+    /* ====== Individual Button ====== */
+    .calc-btn {
+        border: none;
+        border-radius: 50%;         /* Circular buttons */
+        width: 65px;
+        height: 65px;
+        font-size: 24px;
+        cursor: pointer;
+        transition: all 0.15s ease; /* Smooth hover effect */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Hover effect - slightly brighter */
+    .calc-btn:hover {
+        filter: brightness(1.2);
+    }
+
+    /* Active (clicked) effect - slightly smaller */
+    .calc-btn:active {
+        transform: scale(0.95);
+    }
+
+    /* ====== Button Color Variations ====== */
+    
+    /* Number buttons (0-9) - Dark gray */
+    .btn-number {
+        background: #505050;
+        color: white;
+    }
+
+    /* Operator buttons (+, -, ×, ÷, =) - Orange */
+    .btn-operator {
+        background: #ff9f0a;
+        color: white;
+    }
+
+    /* Function buttons (AC, %, +/-) - Light gray */
+    .btn-function {
+        background: #a5a5a5;
+        color: black;
+    }
+
+    /* Zero button - spans 2 columns, pill shape */
+    .btn-zero {
+        grid-column: span 2;        /* Take up 2 columns */
+        width: 100%;
+        border-radius: 35px;        /* Pill shape instead of circle */
+        justify-content: flex-start;
+        padding-left: 28px;
+    }
+
+    /* ====== History Panel ====== */
+    .history-panel {
+        width: 280px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        max-height: 450px;
+        overflow-y: auto;           /* Scroll if too many items */
+    }
+
+    .history-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .history-item {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .history-expression {
+        color: #666;
+        font-size: 13px;
+    }
+
+    .history-result {
+        font-size: 18px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .history-time {
+        color: #999;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .btn-clear-history {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+
+    .btn-new-window {
+        margin-bottom: 15px;
+    }
+
+    .empty-history {
+        color: #999;
+        font-style: italic;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .window-id {
+        font-size: 10px;
+        color: #ccc;
+        text-align: center;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="calculator-page">
+    @* ========================================================================
+       THE CALCULATOR
+       ======================================================================== *@
+    <div class="calculator">
+        @* ------ Display Area ------ *@
+        <div class="display">
+            @* Show the expression being built (e.g., "5 + 3") *@
+            <div class="display-expression">
+                @Model.Expression
+            </div>
+            @* Show the current value (main display) *@
+            <div class="display-value">
+                @Model.CurrentValue
+            </div>
+        </div>
+
+        @* ------ Button Grid ------ *@
+        @* 
+           We use a <form> to send button presses to the server.
+           Each button is actually a submit button with a name/value.
+           When clicked, the form POSTs to /Calculator/Press with:
+             - windowId (hidden field)
+             - action OR digit (from the button clicked)
+        *@
+        <div class="buttons">
+            @* Row 1: AC, +/-, %, ÷ *@
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="AC" class="calc-btn btn-function">AC</button>
+            </form>
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="+/-" class="calc-btn btn-function">+/-</button>
+            </form>
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="%" class="calc-btn btn-function">%</button>
+            </form>
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="/" class="calc-btn btn-operator">÷</button>
+            </form>
+
+            @* Row 2: 7, 8, 9, × *@
+            @for (int i = 7; i <= 9; i++)
+            {
+                <form method="post" asp-action="Press" style="display:contents">
+                    <input type="hidden" name="windowId" value="@Model.WindowId" />
+                    <button type="submit" name="digit" value="@i" class="calc-btn btn-number">@i</button>
+                </form>
+            }
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="*" class="calc-btn btn-operator">×</button>
+            </form>
+
+            @* Row 3: 4, 5, 6, - *@
+            @for (int i = 4; i <= 6; i++)
+            {
+                <form method="post" asp-action="Press" style="display:contents">
+                    <input type="hidden" name="windowId" value="@Model.WindowId" />
+                    <button type="submit" name="digit" value="@i" class="calc-btn btn-number">@i</button>
+                </form>
+            }
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="-" class="calc-btn btn-operator">−</button>
+            </form>
+
+            @* Row 4: 1, 2, 3, + *@
+            @for (int i = 1; i <= 3; i++)
+            {
+                <form method="post" asp-action="Press" style="display:contents">
+                    <input type="hidden" name="windowId" value="@Model.WindowId" />
+                    <button type="submit" name="digit" value="@i" class="calc-btn btn-number">@i</button>
+                </form>
+            }
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="+" class="calc-btn btn-operator">+</button>
+            </form>
+
+            @* Row 5: 0 (wide), =  *@
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="digit" value="0" class="calc-btn btn-number btn-zero">0</button>
+            </form>
+            <form method="post" asp-action="Press" style="display:contents">
+                <input type="hidden" name="windowId" value="@Model.WindowId" />
+                <button type="submit" name="action" value="=" class="calc-btn btn-operator">=</button>
+            </form>
+        </div>
+
+        @* Show truncated Window ID for debugging *@
+        <div class="window-id">
+            Window: @Model.WindowId.Substring(0, Math.Min(8, Model.WindowId.Length))...
+        </div>
+    </div>
+
+    @* ========================================================================
+       HISTORY PANEL
+       ======================================================================== *@
+    <div class="history-panel">
+        <div class="history-title">
+            <span>📜 History</span>
+            @if (Model.History.Any())
+            {
+                <form method="post" asp-action="ClearHistory" style="display:inline">
+                    <input type="hidden" name="windowId" value="@Model.WindowId" />
+                    <button type="submit" class="btn btn-sm btn-outline-danger btn-clear-history">
+                        Clear
+                    </button>
+                </form>
+            }
+        </div>
+
+        @* New Window Button *@
+        <a asp-action="NewWindow" class="btn btn-sm btn-primary btn-new-window w-100" target="_blank">
+            ➕ Open New Calculator
+        </a>
+
+        @* History Items *@
+        @if (Model.History.Any())
+        {
+            @foreach (var item in Model.History)
+            {
+                <div class="history-item">
+                    <div class="history-expression">@item.Expression =</div>
+                    <div class="history-result">@item.Result</div>
+                    <div class="history-time">@item.CreatedAt.ToString("HH:mm:ss")</div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-history">
+                No calculations yet.<br />
+                Try 5 + 3 = 
+            </div>
+        }
+    </div>
+</div>
+
+@* ============================================================================
+   JQUERY ENHANCEMENTS (Optional)
+   ============================================================================
+   These add keyboard support and visual feedback.
+   The calculator works WITHOUT these - they just make it nicer.
+   ============================================================================ *@
+@section Scripts {
+    <script>
+        // jQuery Document Ready
+        // $(function() { ... }) runs when page is fully loaded
+        $(function () {
+            // ================================================================
+            // KEYBOARD SUPPORT
+            // ================================================================
+            // Listen for key presses anywhere on the page
+            $(document).on('keydown', function (e) {
+                // e.key contains the key that was pressed
+                var key = e.key;
+
+                // Map keyboard keys to calculator buttons
+                // Find the button with matching value and click it
+                if (key >= '0' && key <= '9') {
+                    // Number keys: find button where name="digit" and value=key
+                    $('button[name="digit"][value="' + key + '"]').click();
+                }
+                else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                    // Operator keys
+                    $('button[name="action"][value="' + key + '"]').click();
+                }
+                else if (key === 'Enter' || key === '=') {
+                    // Enter or = key: calculate
+                    e.preventDefault();  // Prevent form submission
+                    $('button[name="action"][value="="]').click();
+                }
+                else if (key === 'Escape' || key === 'c' || key === 'C') {
+                    // Escape or C key: clear
+                    $('button[name="action"][value="AC"]').click();
+                }
+                else if (key === '%') {
+                    $('button[name="action"][value="%"]').click();
+                }
+            });
+
+            // ================================================================
+            // BUTTON CLICK ANIMATION
+            // ================================================================
+            // Add a "flash" effect when button is clicked
+            $('.calc-btn').on('click', function () {
+                var btn = $(this);
+                btn.css('opacity', '0.5');
+                setTimeout(function () {
+                    btn.css('opacity', '1');
+                }, 100);
+            });
+
+            // ================================================================
+            // CONSOLE LOG FOR DEBUGGING
+            // ================================================================
+            console.log('Calculator loaded. Window ID: @Model.WindowId');
+            console.log('Keyboard shortcuts: 0-9, +, -, *, /, Enter/=, Escape/C');
+        });
+    </script>
+}

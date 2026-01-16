@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- ====================================================================== -->
+  <!-- NuGet Packages - External Libraries                                    -->
+  <!-- ====================================================================== -->
+  <!-- 
+    NuGet is like npm for .NET - a package manager.
+    These packages add functionality not included in the base framework.
+  -->
+  <ItemGroup>
+    <!-- Entity Framework Core - The ORM (Object-Relational Mapper) -->
+    <!-- Maps C# classes to database tables automatically -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    
+    <!-- SQLite provider for Entity Framework -->
+    <!-- SQLite is a simple file-based database, perfect for learning -->
+    <!-- The database will be a single file: calculator.db -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    
+    <!-- Design-time tools for Entity Framework -->
+    <!-- Used for creating migrations (database schema changes) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
